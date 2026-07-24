@@ -63,6 +63,29 @@ async function getDecisionSinResolver(supabase: Awaited<ReturnType<typeof create
   return data;
 }
 
+async function getProximaTarea(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase
+    .from("tareas")
+    .select("titulo, dominio, fecha_vencimiento, estado")
+    .in("estado", ["pendiente", "en_progreso"])
+    .order("fecha_vencimiento", { ascending: true, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+async function getProximaCompetencia(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from("competencias")
+    .select("nombre, fecha, disciplina, categoria")
+    .gte("fecha", hoy)
+    .order("fecha", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
 function Card({
   title,
   children,
@@ -83,12 +106,15 @@ function Card({
 export default async function Home() {
   const supabase = await createClient();
 
-  const [readiness, objetivo, entrenamiento, decision] = await Promise.all([
-    getReadiness(supabase),
-    getObjetivoActivo(supabase),
-    getUltimoEntrenamiento(supabase),
-    getDecisionSinResolver(supabase),
-  ]);
+  const [readiness, objetivo, tarea, entrenamiento, competencia, decision] =
+    await Promise.all([
+      getReadiness(supabase),
+      getObjetivoActivo(supabase),
+      getProximaTarea(supabase),
+      getUltimoEntrenamiento(supabase),
+      getProximaCompetencia(supabase),
+      getDecisionSinResolver(supabase),
+    ]);
 
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
@@ -127,6 +153,22 @@ export default async function Home() {
         )}
       </Card>
 
+      <Card title="Próxima tarea pendiente">
+        {tarea ? (
+          <div>
+            <p className="text-lg font-semibold">{tarea.titulo}</p>
+            <p className="text-neutral-500">
+              {tarea.dominio}
+              {tarea.fecha_vencimiento
+                ? ` · vence ${formatFecha(tarea.fecha_vencimiento)}`
+                : ""}
+            </p>
+          </div>
+        ) : (
+          <p className="text-neutral-500">Sin tareas pendientes</p>
+        )}
+      </Card>
+
       <Card title="Último entrenamiento registrado">
         {entrenamiento ? (
           <div>
@@ -143,6 +185,21 @@ export default async function Home() {
           </div>
         ) : (
           <p className="text-neutral-500">Sin entrenamientos registrados</p>
+        )}
+      </Card>
+
+      <Card title="Próxima competencia">
+        {competencia ? (
+          <div>
+            <p className="text-lg font-semibold">{competencia.nombre}</p>
+            <p className="text-neutral-500">
+              {formatFecha(competencia.fecha)} · {competencia.disciplina}
+              {competencia.categoria ? ` · ${competencia.categoria}` : ""} ·{" "}
+              {diasRestantes(competencia.fecha)} días restantes
+            </p>
+          </div>
+        ) : (
+          <p className="text-neutral-500">Sin competencias próximas</p>
         )}
       </Card>
 
