@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ function formatFecha(fecha: string) {
   });
 }
 
-async function getReadiness() {
+async function getReadiness(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
     .from("metricas")
     .select("valor, unidad, fecha")
@@ -30,7 +31,7 @@ async function getReadiness() {
   return data;
 }
 
-async function getObjetivoActivo() {
+async function getObjetivoActivo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
     .from("objetivos")
     .select("nombre, fecha_objetivo")
@@ -41,7 +42,7 @@ async function getObjetivoActivo() {
   return data;
 }
 
-async function getUltimoEntrenamiento() {
+async function getUltimoEntrenamiento(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
     .from("entrenamientos")
     .select("fecha, disciplina, titulo, duracion_min, tss")
@@ -51,7 +52,7 @@ async function getUltimoEntrenamiento() {
   return data;
 }
 
-async function getDecisionSinResolver() {
+async function getDecisionSinResolver(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
     .from("decisiones")
     .select("fecha, contexto, decision_tomada")
@@ -80,16 +81,21 @@ function Card({
 }
 
 export default async function Home() {
+  const supabase = await createClient();
+
   const [readiness, objetivo, entrenamiento, decision] = await Promise.all([
-    getReadiness(),
-    getObjetivoActivo(),
-    getUltimoEntrenamiento(),
-    getDecisionSinResolver(),
+    getReadiness(supabase),
+    getObjetivoActivo(supabase),
+    getUltimoEntrenamiento(supabase),
+    getDecisionSinResolver(supabase),
   ]);
 
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
-      <h1 className="text-2xl font-semibold">Antonia OS</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Antonia OS</h1>
+        <LogoutButton />
+      </div>
 
       <Card title="Estado de readiness de hoy">
         {readiness ? (
