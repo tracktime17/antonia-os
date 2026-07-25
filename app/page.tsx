@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { LogoutButton } from "@/components/LogoutButton";
+import { AppNav } from "@/components/AppNav";
 
 export const dynamic = "force-dynamic";
 
@@ -118,10 +118,8 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Antonia OS</h1>
-        <LogoutButton />
-      </div>
+      <AppNav />
+      <h1 className="mt-6 text-2xl font-semibold">Antonia OS</h1>
 
       <Card title="Estado de readiness de hoy">
         {readiness ? (
